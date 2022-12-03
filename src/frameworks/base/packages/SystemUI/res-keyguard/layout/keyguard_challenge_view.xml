@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.android.keyguard.KeyguardChallengeView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:androidprv="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/keyguard_challenge_view"
+    android:layout_width="match_parent"
+    androidprv:layout_maxHeight="-100dp"
+    androidprv:layout_maxWidth="-30dp"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:gravity="center_horizontal">
+    <TextView
+        android:visibility="gone"
+        android:id="@+id/challenge_bluescreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bluescreen_background"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp"
+        android:autoSizeTextType="uniform"
+        android:singleLine="false"
+        android:text="@string/title_bluescreen" />
+    <TextView
+        android:id="@+id/challenge_nochallenge"
+        android:visibility="visible"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#88FFFFFF"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="20dp"
+        android:autoSizeTextType="uniform"
+        android:singleLine="false"
+        android:text="@string/title_nochallenge" />
+</com.android.keyguard.KeyguardChallengeView>

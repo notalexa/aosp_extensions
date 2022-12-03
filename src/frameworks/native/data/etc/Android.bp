@@ -1,0 +1,7 @@
+
+prebuilt_etc {
+	name:"feature.accept_escrow_tokens",
+	sub_dir:"permissions",
+	src:"android.security.accept_escrow_tokens.xml",
+	filename_from_src:true
+}
