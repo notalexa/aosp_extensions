@@ -5,6 +5,8 @@
 }
 export AOSP_HOME="`grep -A 1 "<name>AOSP_HOME</name>" .project  | sed -ne 's#.*<value>file:\([^<]*\)</value>.*#\1#p'`"
 export PROJECT_HOME=$PWD
+echo "Settings: AOSP: $AOSP_HOME, project: $PROJECT_HOME"
+
 (cd $AOSP_HOME
 for f in `find . -type d -name .git` ; do
 (cd $f/..

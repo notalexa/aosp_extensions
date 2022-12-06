@@ -16,9 +16,14 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>aosp</name>
+			<name>aosp-frameworks</name>
 			<type>2</type>
 			<locationURI>AOSP_HOME/frameworks</locationURI>
+		</link>
+		<link>
+			<name>aosp-build</name>
+			<type>2</type>
+			<locationURI>AOSP_HOME/build</locationURI>
 		</link>
 		<link>
 			<name>apps-libs</name>

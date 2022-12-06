@@ -112,6 +112,7 @@ import java.util.ArrayList;
  * - are input events restricted due to the state of the keyguard?
  *
  * Callbacks to the phone window manager:
+
  * - the keyguard is showing
  *
  * Example external events that translate to keyguard view changes:
@@ -366,15 +367,6 @@ public class KeyguardViewMediator extends SystemUI {
 
     KeyguardUpdateMonitorCallback mUpdateCallback = new KeyguardUpdateMonitorCallback() {
 
-        @Override
-		public void onStartedWakingUp() {
-        	boolean trusted=mUpdateMonitor.getUserHasTrust(KeyguardUpdateMonitor.getCurrentUser());//.getCurrentUser
-    		System.out.println("conetxt: On Wakeup: "+trusted+","+mShowing);
-        	if(trusted==mShowing) {
-        		System.out.println("conetxt: On Wakeup: not trusted but not showing");
-        	}
-		}
-
 		@Override
         public void onUserSwitching(int userId) {
             // Note that the mLockPatternUtils user has already been updated from setCurrentUser.
@@ -544,7 +536,6 @@ public class KeyguardViewMediator extends SystemUI {
         public void onTrustChanged(int userId) {
             if (userId == KeyguardUpdateMonitor.getCurrentUser()) {
             	boolean trusted=mUpdateMonitor.getUserHasTrust(userId);
-            	System.out.println("conetxt: Trust changed "+trusted);
                 synchronized (KeyguardViewMediator.this) {
                     notifyTrustedChangedLocked(trusted);
                 }

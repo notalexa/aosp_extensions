@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="generated"/>
-	<classpathentry kind="src" path="aosp/base/packages/SystemUI/src"/>
-	<classpathentry kind="src" path="aosp/base/core/java"/>
-	<classpathentry kind="src" path="aosp/base/services/core/java"/>
+	<classpathentry kind="src" path="aosp-frameworks/base/packages/SystemUI/src"/>
+	<classpathentry kind="src" path="aosp-frameworks/base/core/java"/>
+	<classpathentry kind="src" path="aosp-frameworks/base/services/core/java"/>
 	<classpathentry kind="lib" path="common-libs/framework_intermediates/classes.jar"/>
 	<classpathentry kind="lib" path="sdk-libs/androidx/androidx.appcompat_appcompat/android_common/turbine-combined/androidx.appcompat_appcompat.jar"/>
 	<classpathentry kind="lib" path="sdk-libs/androidx/androidx.arch.core_core-runtime/android_common/turbine-combined/androidx.arch.core_core-runtime.jar"/>
