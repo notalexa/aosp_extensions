@@ -83,8 +83,6 @@ public class KeyguardBouncer {
         }
     };
     
-    private Runnable deferredTurnOn;
-
     private int mStatusBarHeight;
     private float mExpansion = EXPANSION_HIDDEN;
     protected ViewGroup mRoot;
@@ -337,17 +335,6 @@ public class KeyguardBouncer {
         mFalsingManager.onBouncerHidden();
     }
 
-    public void onScreenTurnedOn(StatusBarKeyguardViewManager manager) {
-        if (mKeyguardView != null/* && mRoot != null && mRoot.getVisibility() == View.VISIBLE*/) {
-        	mKeyguardView.onScreenTurnedOn(this,manager);
-        	//mKeyguardView.dismiss(KeyguardUpdateMonitor.getCurrentUser());
-        } else {
-        	deferredTurnOn=() -> {
-        		onScreenTurnedOn(manager);
-        	};
-        }
-    }
-
     public void onScreenTurnedOff() {
         if (mKeyguardView != null && mRoot != null && mRoot.getVisibility() == View.VISIBLE) {
             mKeyguardView.onPause();
@@ -459,10 +446,6 @@ public class KeyguardBouncer {
         final WindowInsets rootInsets = mRoot.getRootWindowInsets();
         if (rootInsets != null) {
             mRoot.dispatchApplyWindowInsets(rootInsets);
-        }
-        if(deferredTurnOn!=null) {
-        	deferredTurnOn.run();
-        	deferredTurnOn=null;
         }
     }
 

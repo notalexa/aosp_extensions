@@ -1259,7 +1259,8 @@ public class TrustManagerService extends SystemService {
                     //refreshDeviceLockedForUser(msg.arg1);
                     break;
                 case MSG_SCHEDULE_TRUST_TIMEOUT:
-                    handleScheduleTrustTimeout(msg.arg1, msg.arg2);
+                	// Ignore trust timeouts.
+                    //handleScheduleTrustTimeout(msg.arg1, msg.arg2);
                     break;
                 case MSG_GRANT_PERM_TO_USER:{
 	                	Grants grants=getGrants(msg.arg1);

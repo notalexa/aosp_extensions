@@ -53,11 +53,13 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
             @Override
             public void challengeSolved(boolean success) {
                 showLock.release();
-                if(success) {
-                    unlock();
-                } else {
-                    onResume(VIEW_REVEALED);
-                }
+                mContext.getMainExecutor().execute(()->{
+                    if(success) {
+                        unlock();
+                    } else {
+                        onResume(VIEW_REVEALED);
+                    }
+                });
             }
         });
     }

@@ -618,7 +618,7 @@ public class KeyguardViewMediator extends SystemUI {
 
         @Override
         public void resetKeyguard() {
-            resetStateLocked();
+            resetStateLocked(true);
         }
 
         @Override
@@ -1380,8 +1380,13 @@ public class KeyguardViewMediator extends SystemUI {
      * @see #handleReset
      */
     private void resetStateLocked() {
+    	resetStateLocked(false);
+    }
+    
+    private void resetStateLocked(boolean scrimMode) {
         if (DEBUG) Log.e(TAG, "resetStateLocked");
         Message msg = mHandler.obtainMessage(RESET);
+        msg.arg1=scrimMode?0:1;
         mHandler.sendMessage(msg);
     }
 
@@ -1435,6 +1440,7 @@ public class KeyguardViewMediator extends SystemUI {
         Trace.beginSection("KeyguardViewMediator#showLocked aqcuiring mShowKeyguardWakeLock");
         if (DEBUG) Log.d(TAG, "showLocked");
         // ensure we stay awake until we are finished displaying the keyguard
+        new Exception("Acquire Wake lock").printStackTrace();
         mShowKeyguardWakeLock.acquire();
         Message msg = mHandler.obtainMessage(SHOW, options);
         mHandler.sendMessage(msg);
@@ -1547,7 +1553,7 @@ public class KeyguardViewMediator extends SystemUI {
                     handleHide();
                     break;
                 case RESET:
-                    handleReset();
+                    handleReset(msg.arg1==0);
                     break;
                 case VERIFY_UNLOCK:
                     Trace.beginSection("KeyguardViewMediator#handleMessage VERIFY_UNLOCK");
@@ -1950,10 +1956,10 @@ public class KeyguardViewMediator extends SystemUI {
      * Handle message sent by {@link #resetStateLocked}
      * @see #RESET
      */
-    private void handleReset() {
+    private void handleReset(boolean scrimMode) {
         synchronized (KeyguardViewMediator.this) {
             if (DEBUG) Log.d(TAG, "handleReset");
-            mStatusBarKeyguardViewManager.reset(true /* hideBouncerWhenShowing */);
+            mStatusBarKeyguardViewManager.reset(scrimMode,true /* hideBouncerWhenShowing */);
         }
     }
 

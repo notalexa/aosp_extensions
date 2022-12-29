@@ -457,13 +457,4 @@ public class KeyguardHostView extends FrameLayout implements SecurityCallback {
     public SecurityMode getCurrentSecurityMode() {
         return mSecurityContainer.getCurrentSecurityMode();
     }
-
-	public void onScreenTurnedOn(KeyguardBouncer bouncer,StatusBarKeyguardViewManager manager) {
-		switch(getSecurityMode()) {
-			case Challenge:
-				manager.animateCollapsePanels(10f);
-				bouncer.show(true,true);
-				break;
-		}
-	}
 }

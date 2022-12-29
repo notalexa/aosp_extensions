@@ -3765,7 +3765,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             if (isWakingUpOrAwake()) {
                 if (DEBUG_CAMERA_LIFT) Slog.d(TAG, "Launching camera");
                 if (mStatusBarKeyguardViewManager.isBouncerShowing()) {
-                    mStatusBarKeyguardViewManager.reset(true /* hide */);
+                    mStatusBarKeyguardViewManager.reset(false,true /* hide */);
                 }
                 mNotificationPanel.launchCamera(mDeviceInteractive /* animate */, source);
                 updateScrimController();

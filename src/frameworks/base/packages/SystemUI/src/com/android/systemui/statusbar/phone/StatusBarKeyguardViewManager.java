@@ -35,6 +35,7 @@ import android.view.WindowManagerGlobal;
 
 import com.android.internal.util.LatencyTracker;
 import com.android.internal.widget.LockPatternUtils;
+import com.android.keyguard.KeyguardSecurityModel.SecurityMode;
 import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.keyguard.KeyguardUpdateMonitorCallback;
 import com.android.keyguard.ViewMediatorCallback;
@@ -92,7 +93,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
         @Override
         public void onFullyShown() {
             updateStates();
-            mStatusBar.wakeUpIfDozing(SystemClock.uptimeMillis(), mContainer, "BOUNCER_VISIBLE");
+//            mStatusBar.wakeUpIfDozing(SystemClock.uptimeMillis(), mContainer, "BOUNCER_VISIBLE");
             updateLockIcon();
         }
 
@@ -178,7 +179,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
             // Since we won't get a setOccluded call we have to reset the view manually such that
             // the bouncer goes away.
             if (mOccluded) {
-                reset(true /* hideBouncerWhenShowing */);
+                reset(true,true /* hideBouncerWhenShowing */);
             }
         }
     };
@@ -287,7 +288,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
         mStatusBarWindowController.setKeyguardShowing(true);
         mKeyguardMonitor.notifyKeyguardState(
                 mShowing, mKeyguardMonitor.isSecure(), mKeyguardMonitor.isOccluded());
-        reset(true /* hideBouncerWhenShowing */);
+        reset(false,true /* hideBouncerWhenShowing */);
         StatsLog.write(StatsLog.KEYGUARD_STATE_CHANGED,
             StatsLog.KEYGUARD_STATE_CHANGED__STATE__SHOWN);
     }
@@ -296,8 +297,8 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
      * Shows the notification keyguard or the bouncer depending on
      * {@link KeyguardBouncer#needsFullscreenBouncer()}.
      */
-    protected void showBouncerOrKeyguard(boolean hideBouncerWhenShowing) {
-        if (mBouncer.needsFullscreenBouncer() && !mDozing) {
+    protected void showBouncerOrKeyguard(boolean scrimMode,boolean hideBouncerWhenShowing) {
+        if ((mBouncer.needsFullscreenBouncer() && !mDozing)||(!scrimMode&&mBouncer.getSecurityMode()==SecurityMode.Challenge)) {
             // The keyguard might be showing (already). So we need to hide it.
             mStatusBar.hideKeyguard();
             mBouncer.show(true /* resetSecuritySelection */);
@@ -357,6 +358,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                 mAfterKeyguardGoneAction = r;
                 mBouncer.show(false /* resetSecuritySelection */);
             }
+            mStatusBar.hideKeyguard();
         }
         updateStates();
     }
@@ -375,8 +377,8 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
 
     /**
      * Reset the state of the view.
-     */
-    public void reset(boolean hideBouncerWhenShowing) {
+     */    
+    public void reset(boolean scrimMode,boolean hideBouncerWhenShowing) {
         if (mShowing) {
             if (mOccluded && !mDozing) {
                 mStatusBar.hideKeyguard();
@@ -384,7 +386,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                     hideBouncer(false /* destroyView */);
                 }
             } else {
-                showBouncerOrKeyguard(hideBouncerWhenShowing);
+                showBouncerOrKeyguard(scrimMode,hideBouncerWhenShowing);
             }
             KeyguardUpdateMonitor.getInstance(mContext).sendKeyguardReset();
             updateStates();
@@ -413,7 +415,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
     }
 
     public void onScreenTurnedOn() {
-    	mBouncer.onScreenTurnedOn(this);
+        // TODO: remove
     }
 
     @Override
@@ -426,7 +428,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
         if (mDozing != dozing) {
             mDozing = dozing;
             if (dozing || mBouncer.needsFullscreenBouncer() || mOccluded) {
-                reset(dozing /* hideBouncerWhenShowing */);
+                reset(true,dozing /* hideBouncerWhenShowing */);
             }
             updateStates();
 
@@ -466,7 +468,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                             @Override
                             public void run() {
                                 mStatusBarWindowController.setKeyguardOccluded(mOccluded);
-                                reset(true /* hideBouncerWhenShowing */);
+                                reset(false,true /* hideBouncerWhenShowing */);
                             }
                         });
                 return;
@@ -486,7 +488,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
         if (!mDozing) {
             // If Keyguard is reshown, don't hide the bouncer as it might just have been requested
             // by a FLAG_DISMISS_KEYGUARD_ACTIVITY.
-            reset(isOccluding /* hideBouncerWhenShowing*/);
+            reset(false,isOccluding /* hideBouncerWhenShowing*/);
         }
         if (animate && !occluded && mShowing && !mBouncer.isShowing()) {
             mStatusBar.animateKeyguardUnoccluding();
@@ -671,7 +673,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                 hideBouncer(false);
                 updateStates();
             } else {
-                reset(hideImmediately);
+                reset(false,hideImmediately);
             }
             return true;
         }
