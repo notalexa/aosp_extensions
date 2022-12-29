@@ -137,7 +137,7 @@ public class KeyguardSecurityContainer extends FrameLayout implements KeyguardSe
 
     @Override
     public void onResume(int reason) {
-        if (mCurrentSecuritySelection != SecurityMode.None) {
+        if (mCurrentSecuritySelection != SecurityMode.None&&mUpdateMonitor.isDeviceInteractive()) {
             getSecurityView(mCurrentSecuritySelection).onResume(reason);
         }
         updateBiometricRetry();
@@ -564,7 +564,10 @@ public class KeyguardSecurityContainer extends FrameLayout implements KeyguardSe
             oldView.setKeyguardCallback(mNullCallback); // ignore requests from old view
         }
         if (securityMode != SecurityMode.None) {
-            newView.onResume(KeyguardSecurityView.VIEW_REVEALED);
+        	if(mUpdateMonitor.isDeviceInteractive()) {
+        		System.out.println("conetxt: Interactive!!!");
+        		newView.onResume(KeyguardSecurityView.VIEW_REVEALED);
+        	}
             newView.setKeyguardCallback(mCallback);
         }
 

@@ -74,6 +74,14 @@ public class KeyguardBouncer {
                 public void onStrongAuthStateChanged(int userId) {
                     mBouncerPromptReason = mCallback.getBouncerPromptReason();
                 }
+
+				@Override
+				public void onScreenTurnedOn() {
+					if(isShowing()&&mKeyguardView!=null) {
+						mKeyguardView.onResume();
+					}
+				}
+                
             };
     private final Runnable mRemoveViewRunnable = this::removeView;
     protected KeyguardHostView mKeyguardView;
@@ -199,7 +207,7 @@ public class KeyguardBouncer {
         mFalsingManager.onBouncerShown();
         if (mKeyguardView == null) {
             Log.wtf(TAG, "onFullyShown when view was null");
-        } else {
+        } else /*if(mCallback.isScreenOn())*/ {
             mKeyguardView.onResume();
         }
     }
@@ -245,7 +253,9 @@ public class KeyguardBouncer {
             }
             mShowingSoon = false;
             if (mExpansion == EXPANSION_VISIBLE) {
-                mKeyguardView.onResume();
+            	//if(mCallback.isScreenOn()) {
+            		mKeyguardView.onResume();
+            	//}
                 mKeyguardView.resetSecurityContainer();
             }
             StatsLog.write(StatsLog.KEYGUARD_BOUNCER_STATE_CHANGED,
