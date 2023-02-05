@@ -15,8 +15,11 @@
  */
 package android.service.trust;
 
+import android.content.Intent;
+
 interface ChallengeCallback {
-    void challengeSolved(boolean success);
+    void challengeSolved(boolean success,in Intent intent);
     void onError();
     void cancelled();
+    void doze(long delay);
 }

@@ -62,11 +62,11 @@ public class ChallengeView extends FrameLayout {
     protected void init() {
         callback=new ChallengeCallback.Stub() {
             @Override
-            public void challengeSolved(boolean success) throws RemoteException {
+            public void challengeSolved(boolean success,Intent intent) throws RemoteException {
                 if(listener!=null) {
-                    listener.challengeSolved(success);
+                    listener.challengeSolved(success,intent);
                 } else {
-                    Log.i(TAG, "challengeSolved in callback: " + success);
+                    Log.i(TAG, "challengeSolved in callback");
                 }
             }
             @Override
@@ -76,6 +76,11 @@ public class ChallengeView extends FrameLayout {
             @Override
             public void cancelled() throws RemoteException {
                 fireChallengeCancelled();
+            }
+
+            @Override
+            public void doze(long delay) throws RemoteException {
+            	fireDoze(delay);
             }
 
         };
@@ -91,6 +96,9 @@ public class ChallengeView extends FrameLayout {
     }
 
     protected void fireChallengeCancelled() {
+    }
+
+    protected void fireDoze(long delay) {
     }
 
     private void showService() {
@@ -142,6 +150,20 @@ public class ChallengeView extends FrameLayout {
             }
 
             @Override
+			public void onBindingDied(ComponentName name) {
+            	System.out.println("conetxt onBindingdied");
+				ServiceConnection.super.onBindingDied(name);
+				onChallengeDied();
+			}
+
+			@Override
+			public void onNullBinding(ComponentName name) {
+            	System.out.println("conetxt onNullBinding");
+				ServiceConnection.super.onNullBinding(name);
+				onChallengeDied();
+			}
+
+			@Override
             public void onServiceDisconnected(ComponentName name) {
                 Log.w(TAG,"Service disconnected");
                 if(currentConnection==this) {
@@ -193,6 +215,7 @@ public class ChallengeView extends FrameLayout {
 
 
     public interface ResultListener {
-        void challengeSolved(boolean success);
+        void challengeSolved(boolean success,Intent intent);
+        void doze(long delay);
     }
 }

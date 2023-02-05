@@ -36,6 +36,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
 
 import com.android.internal.widget.LockPatternUtils;
+import com.android.internal.widget.LockPatternUtils.StrongAuthTracker;
 import com.android.keyguard.KeyguardHostView;
 import com.android.keyguard.KeyguardSecurityView;
 import com.android.keyguard.KeyguardUpdateMonitor;
@@ -60,6 +61,7 @@ public class KeyguardBouncer {
     static final float EXPANSION_VISIBLE = 0f;
 
     protected final Context mContext;
+    protected final StatusBar mStatusBar;
     protected final ViewMediatorCallback mCallback;
     protected final LockPatternUtils mLockPatternUtils;
     protected final ViewGroup mContainer;
@@ -73,6 +75,12 @@ public class KeyguardBouncer {
                 @Override
                 public void onStrongAuthStateChanged(int userId) {
                     mBouncerPromptReason = mCallback.getBouncerPromptReason();
+                    if(!isShowing()&&mLockPatternUtils.getStrongAuthForUser(userId)!=StrongAuthTracker.STRONG_AUTH_NOT_REQUIRED) {
+                    	mHandler.post(() -> {
+                    		show(true);
+                    		mStatusBar.hideKeyguard();
+                    	});
+                    }
                 }
 
 				@Override
@@ -100,12 +108,13 @@ public class KeyguardBouncer {
     private boolean mIsScrimmed;
     private ViewGroup mLockIconContainer;
 
-    public KeyguardBouncer(Context context, ViewMediatorCallback callback,
+    public KeyguardBouncer(Context context, StatusBar statusBar,ViewMediatorCallback callback,
             LockPatternUtils lockPatternUtils, ViewGroup container,
             DismissCallbackRegistry dismissCallbackRegistry, FalsingManager falsingManager,
             BouncerExpansionCallback expansionCallback,
             KeyguardUpdateMonitor keyguardUpdateMonitor, Handler handler) {
         mContext = context;
+        mStatusBar = statusBar;
         mCallback = callback;
         mLockPatternUtils = lockPatternUtils;
         mContainer = container;

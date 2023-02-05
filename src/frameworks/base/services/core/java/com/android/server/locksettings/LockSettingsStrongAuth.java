@@ -20,6 +20,11 @@ import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker
         .STRONG_AUTH_NOT_REQUIRED;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker
         .STRONG_AUTH_REQUIRED_AFTER_TIMEOUT;
+import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker
+		.STRONG_AUTH_REQUIRED_AFTER_BOOT;
+import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker
+		.DEFAULT_AUTH_REQUIRED;
+
 
 import com.android.internal.widget.LockPatternUtils.StrongAuthFlags;
 
@@ -105,8 +110,8 @@ public class LockSettingsStrongAuth {
     private void handleRequireStrongAuthOneUser(int strongAuthReason, int userId) {
         StrongAuthFlags oldValue = mStrongAuthForUser.get(userId, mDefaultStrongAuthFlags);
         int newValue = strongAuthReason == STRONG_AUTH_NOT_REQUIRED
-                ? STRONG_AUTH_NOT_REQUIRED
-                : (oldValue.getAuthFlags() | strongAuthReason);
+                ? STRONG_AUTH_NOT_REQUIRED :(strongAuthReason==DEFAULT_AUTH_REQUIRED?oldValue.getAuthFlags()&STRONG_AUTH_REQUIRED_AFTER_BOOT
+                : (oldValue.getAuthFlags() | strongAuthReason));
         if (oldValue.getAuthFlags() != newValue) {
             mStrongAuthForUser.put(userId, oldValue.forFlags(newValue));
             notifyStrongAuthTrackers(oldValue.getLevel(),newValue, userId);

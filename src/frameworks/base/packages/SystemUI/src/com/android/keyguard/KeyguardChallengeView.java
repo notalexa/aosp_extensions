@@ -5,7 +5,9 @@ import com.android.internal.widget.LockPatternUtils;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.os.Handler;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.service.trust.AuthType;
 import android.util.AttributeSet;
 import android.view.View;
@@ -27,6 +29,8 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
     private View mNoChallenge;
     private KeyguardMessageArea mSecurityMessageDisplay;
     private PowerManager.WakeLock showLock;
+    private Handler mHandler;
+    private long mShowtime;
 
 	public KeyguardChallengeView(Context context) {
 		this(context,null);
@@ -40,6 +44,7 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
                 context, android.R.interpolator.linear_out_slow_in);
         mFastOutLinearInInterpolator = AnimationUtils.loadInterpolator(
                 context, android.R.interpolator.fast_out_linear_in);
+        mHandler=new Handler();
 	}
 	
     @Override
@@ -51,9 +56,9 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
         mSecurityMessageDisplay = KeyguardMessageArea.findSecurityMessageDisplay(this);
         onStart(mContext, getApplicationWindowToken(), new android.service.trust.ChallengeView.ResultListener() {
             @Override
-            public void challengeSolved(boolean success) {
+            public void challengeSolved(boolean success,Intent intent) {
                 showLock.release();
-                mContext.getMainExecutor().execute(()->{
+                mHandler.post(()->{
                     if(success) {
                         unlock();
                     } else {
@@ -61,6 +66,10 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
                     }
                 });
             }
+
+			@Override
+			public void doze(long delay) {
+			}
         });
     }
 
@@ -72,10 +81,23 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
     }
 
     @Override
+    protected void fireDoze(long delay) {
+        delay=Math.max(delay, Math.max(10000+mShowtime-SystemClock.uptimeMillis(),500));
+    	if(showLock.isHeld()) {
+    		showLock.acquire(delay);
+    	}
+        mHandler.postDelayed(()->{
+        	showLock.release();
+            PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+            powerManager.goToSleep(SystemClock.uptimeMillis());
+        },delay);
+    }
+
+    @Override
     protected void onChallengeDied() {
         showLock.release();
         if(mBlueScreen!=null) {
-            mContext.getMainExecutor().execute(() -> 
+            mHandler.post(() -> 
                 mBlueScreen.setVisibility(View.VISIBLE));
         }
     }
@@ -158,6 +180,7 @@ public class KeyguardChallengeView extends android.service.trust.ChallengeView i
 	@Override
 	public void onResume(int reason) {
         if(showLock!=null&&!showLock.isHeld()) {
+        	mShowtime=SystemClock.uptimeMillis();
             Intent nextIntent=nextIntent();
             if(nextIntent!=null) {
                 show(nextIntent);

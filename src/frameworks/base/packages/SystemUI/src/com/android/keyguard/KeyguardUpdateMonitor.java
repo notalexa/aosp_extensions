@@ -1663,6 +1663,14 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener {
         mUserFaceAuthenticated.put(getCurrentUser(), false);
         updateFaceListeningState();
     }
+    
+    public boolean isBouncerVisible() {
+    	return mBouncer;
+    }
+    
+    public boolean isLockIconPressed() {
+    	return mLockIconPressed;
+    }
 
     private void startListeningForFingerprint() {
         if (mFingerprintRunningState == BIOMETRIC_STATE_CANCELLING) {

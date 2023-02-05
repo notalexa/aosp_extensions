@@ -74,6 +74,7 @@ import com.android.internal.policy.IKeyguardStateCallback;
 import com.android.internal.telephony.IccCardConstants;
 import com.android.internal.util.LatencyTracker;
 import com.android.internal.widget.LockPatternUtils;
+import com.android.internal.widget.LockPatternUtils.StrongAuthTracker;
 import com.android.keyguard.KeyguardConstants;
 import com.android.keyguard.KeyguardDisplayManager;
 import com.android.keyguard.KeyguardSecurityModel.SecurityMode;
@@ -820,6 +821,7 @@ public class KeyguardViewMediator extends SystemUI {
             // This also "locks" the device when not secure to provide easy access to the
             // camera while preventing unwanted input.
             int currentUser = KeyguardUpdateMonitor.getCurrentUser();
+            mLockPatternUtils.requireStrongAuth(StrongAuthTracker.DEFAULT_AUTH_REQUIRED, currentUser);
             final boolean lockImmediately =
                     mLockPatternUtils.getPowerButtonInstantlyLocks(currentUser)
                             || !mLockPatternUtils.isSecure(currentUser);

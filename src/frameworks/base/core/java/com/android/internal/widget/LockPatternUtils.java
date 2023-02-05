@@ -1946,13 +1946,17 @@ public class LockPatternUtils {
          * Strong authentication is required because the user has triggered lockdown.
          */
         public static final int STRONG_AUTH_REQUIRED_AFTER_USER_LOCKDOWN = 0x20;
+        
+        /**
+         * Flag to indicate that strong auth should be reset to the default value.
+         */
+        public static final int DEFAULT_AUTH_REQUIRED=Integer.MAX_VALUE;
 
         /**
          * Strong auth flags that do not prevent biometric methods from being accepted as auth.
          * If any other flags are set, biometric authentication is disabled.
          */
-        private static final int ALLOWING_BIOMETRIC = STRONG_AUTH_NOT_REQUIRED
-                | SOME_AUTH_REQUIRED_AFTER_USER_REQUEST;
+        private static final int ALLOWING_BIOMETRIC = STRONG_AUTH_NOT_REQUIRED;
 
         private final SparseArray<LockPatternUtils.StrongAuthFlags> mStrongAuthRequiredForUser = new SparseArray<>();
         private final H mHandler;
@@ -2060,10 +2064,6 @@ public class LockPatternUtils {
     		this.mLevel=mLevel;
     	}
     	
-    	public StrongAuthFlags reset() {
-    		return forFlags(StrongAuthTracker.STRONG_AUTH_NOT_REQUIRED);
-    	}
-    	
     	public StrongAuthFlags forFlags(int strongAuthFlags) {
     		return mStrongAuthFlags==strongAuthFlags?this:new StrongAuthFlags(mLevel, strongAuthFlags);
     	}
@@ -2077,7 +2077,7 @@ public class LockPatternUtils {
     	}
 
 		public AuthLevel getTrustLevel() {
-			return mStrongAuthFlags==StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_BOOT?mLevel.getNextStrongLevel():mLevel;
+			return mStrongAuthFlags!=StrongAuthTracker.STRONG_AUTH_NOT_REQUIRED/*==StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_BOOT*/?mLevel.getNextStrongLevel():mLevel;
 		}
     }
 

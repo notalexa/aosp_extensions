@@ -17,6 +17,9 @@ package android.service.trust;
 
 import static android.view.WindowManager.LayoutParams.TYPE_KEYGUARD_CHALLENGE;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import android.app.Dialog;
 import android.app.Service;
 import android.content.Context;
@@ -33,11 +36,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
-import java.util.HashMap;
-import java.util.Map;
-
-import android.service.trust.ChallengeCallback;
-import android.service.trust.ChallengeConnection;
 
 public class ChallengeService extends Service {
     private static final String TAG= ChallengeService.class.getSimpleName();
@@ -179,17 +177,15 @@ public class ChallengeService extends Service {
         this.buttonSolved =solveButton;
     }
 
-    protected void onChallengeShow(View challenge,View.OnClickListener solvedListener) {
+    protected Object onChallengeShow(View challenge,Controls solvedListener) {
        onChallengeShow(challenge);
+       return null;
     }
     
     protected void onChallengeShow(View challenge) {
     }
 
-    protected void onChallengeHide(View challenge) {
-    }
-
-    protected void onShuffle(View challenge) {
+    protected void onChallengeHide(View challenge,Object ctx) {
     }
 
     @Override
@@ -211,7 +207,9 @@ public class ChallengeService extends Service {
         IBinder token;
         Dialog dialog;
         View challengeView;
+        Object ctx;
         ChallengeCallback callback;
+        boolean disappearing;
         public ChallengeDialog(IBinder token,boolean privileged) {
             this.token=token;
             Log.i("ChallengeConnection","Create dialog with token "+token);
@@ -261,11 +259,13 @@ public class ChallengeService extends Service {
         }
 
         public void show() {
-            onChallengeShow(challengeView,getChallengedSolvedListener());
+            ctx=onChallengeShow(challengeView,getChallengedSolvedListener());
+            disappearing=false;
             dialog.show();
         }
         
         public void hide(int timeout) {
+        	disappearing=true;
             if(timeout>0) {
                 challengeView.animate().alpha(0f).translationY(0).setInterpolator(mFastOutLinearInInterpolator).setDuration(timeout).withEndAction(ChallengeDialog.this::hide);
             } else {
@@ -274,12 +274,14 @@ public class ChallengeService extends Service {
         }
 
         public void hide() {
-            onChallengeHide(challengeView);
+        	Object ctx=this.ctx;
+        	this.ctx=null;
+        	onChallengeHide(challengeView,ctx);
             dialog.hide();
         }
 
         public boolean isShowing() {
-            return dialog.isShowing();
+            return /*(!disappearing)&&*/dialog.isShowing();
         }
 
         public void cancel() {
@@ -287,20 +289,43 @@ public class ChallengeService extends Service {
             dialog.dismiss();
         }
 
-        public void challengeSolved() {
+        public void challengeSolved(Intent intent) {
             if(dialog.isShowing()) {
                 try {
-                    callback.challengeSolved(true);
+                    callback.challengeSolved(true,intent);
                 } catch(RemoteException e) {}
             }
         }
 
-        public View.OnClickListener getChallengedSolvedListener() {
-            return new View.OnClickListener() {
+        public void challengeDoze(long delay) {
+            if(dialog.isShowing()) {
+                try {
+                    callback.doze(delay);
+                } catch(RemoteException e) {}
+            }
+        }
+
+        public Controls getChallengedSolvedListener() {
+            return new Controls() {
                 @Override
                 public void onClick(View v) {
-                    challengeSolved();
+                    challengeSolved(null);
                 }
+
+				@Override
+				public void solved() {
+					challengeSolved(null);
+				}
+
+				@Override
+				public void solved(Intent intent) {
+					challengeSolved(intent);
+				}
+
+				@Override
+				public void doze(long delay) {
+					challengeDoze(delay);
+				}
             };
         }
 
@@ -309,7 +334,7 @@ public class ChallengeService extends Service {
         }
     }
 
-    public class Attacher {
+    private class Attacher {
         IBinder token;
         ChallengeCallback callback;
         boolean privileged;
@@ -328,5 +353,14 @@ public class ChallengeService extends Service {
             dialog.init(callback,x,y,w,h);
             return dialog;
         }
+    }
+    
+    public interface Controls extends View.OnClickListener {
+    	public void solved();
+    	public void solved(Intent intent);
+    	public default void doze() {
+    		doze(0);
+    	}
+    	public void doze(long delay);
     }
 }

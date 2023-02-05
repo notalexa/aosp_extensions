@@ -80,6 +80,7 @@ import android.util.Slog;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.Xml;
+import android.view.IWindowManager;
 import android.view.WindowManagerGlobal;
 
 
@@ -207,7 +208,7 @@ public class TrustManagerService extends SystemService {
         } else if (phase == SystemService.PHASE_THIRD_PARTY_APPS_CAN_START) {
             mTrustAgentsCanRun = true;
             refreshAgentList(UserHandle.USER_ALL);
-            //refreshDeviceLockedForUser(UserHandle.USER_ALL);
+            refreshDeviceLockedForUser(UserHandle.USER_ALL);
         } else if (phase == SystemService.PHASE_BOOT_COMPLETED) {
             maybeEnableFactoryTrustAgents(mLockPatternUtils, UserHandle.USER_SYSTEM);
         }
@@ -612,7 +613,9 @@ public class TrustManagerService extends SystemService {
 
     boolean isDeviceLockedInner(int userId) {
         synchronized (mDeviceLockedForUser) {
-            return mDeviceLockedForUser.get(userId, true);
+            boolean locked=mDeviceLockedForUser.get(userId, true);
+            System.out.println("conetxt: Request device locked for user "+userId+": "+locked+" "+mDeviceLockedForUser.get(userId,false));
+            return locked;
         }
     }
 
@@ -806,6 +809,79 @@ public class TrustManagerService extends SystemService {
         }
         return allowedAgents;
     }
+
+    private void refreshDeviceLockedForUser(int userId) {
+        if (userId != UserHandle.USER_ALL && userId < UserHandle.USER_SYSTEM) {
+            Log.e(TAG, "refreshDeviceLockedForUser(userId=" + userId + "): Invalid user handle,"
+                    + " must be USER_ALL or a specific user.", new Throwable("here"));
+            userId = UserHandle.USER_ALL;
+        }
+        List<UserInfo> userInfos;
+        if (userId == UserHandle.USER_ALL) {
+            userInfos = mUserManager.getUsers(true /* excludeDying */);
+        } else {
+            userInfos = new ArrayList<>();
+            userInfos.add(mUserManager.getUserInfo(userId));
+        }
+
+        IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+
+        for (int i = 0; i < userInfos.size(); i++) {
+            UserInfo info = userInfos.get(i);
+
+            if (info == null || info.partial || !info.isEnabled() || info.guestToRemove) {
+                continue;
+            }
+
+            int id = info.id;
+            boolean secure = mLockPatternUtils.isSecure(id);
+
+            if (!info.supportsSwitchToByUser()) {
+                if (info.isManagedProfile() && !secure) {
+                    setDeviceLockedForUser(id, false);
+                }
+                continue;
+            }
+
+            boolean trusted = getGrants(id).grantsTrust(mStrongAuthTracker.getStrongAuthForUser(id).getLevel());
+            boolean showingKeyguard = true;
+            boolean biometricAuthenticated = false;
+            if (mCurrentUser == id) {
+                try {
+                    showingKeyguard = wm.isKeyguardLocked();
+                } catch (RemoteException e) {
+                }
+            }
+            boolean deviceLocked = secure && showingKeyguard && !trusted &&
+                    !biometricAuthenticated;
+            setDeviceLockedForUser(id, deviceLocked);
+        }
+    }
+    
+    private void setDeviceLockedForUser(@UserIdInt int userId, boolean locked) {
+        final boolean changed;
+        synchronized (mDeviceLockedForUser) {
+            changed = isDeviceLockedInner(userId) != locked;
+            mDeviceLockedForUser.put(userId, locked);
+        }
+        if (changed) {
+            dispatchDeviceLocked(userId, locked);
+        }
+    }
+
+    private void dispatchDeviceLocked(int userId, boolean isLocked) {
+        for (int i = 0; i < mActiveAgents.size(); i++) {
+            AgentInfo agent = mActiveAgents.valueAt(i);
+            if (agent.userId == userId) {
+                if (isLocked) {
+                    agent.agent.onDeviceLocked();
+                } else{
+                    agent.agent.onDeviceUnlocked();
+                }
+            }
+        }
+    }
+
 
     // Agent dispatch and aggregation
 
@@ -1216,10 +1292,10 @@ public class TrustManagerService extends SystemService {
                 case MSG_ENABLED_AGENTS_CHANGED:
                     refreshAgentList(UserHandle.USER_ALL);
                     // This is also called when the security mode of a user changes.
-                    //refreshDeviceLockedForUser(UserHandle.USER_ALL);
+                    refreshDeviceLockedForUser(UserHandle.USER_ALL);
                     break;
                 case MSG_KEYGUARD_SHOWING_CHANGED:
-                    //refreshDeviceLockedForUser(mCurrentUser);
+                    refreshDeviceLockedForUser(mCurrentUser);
                     break;
                 case MSG_START_USER:
                 case MSG_CLEANUP_USER:
@@ -1229,7 +1305,7 @@ public class TrustManagerService extends SystemService {
                 case MSG_SWITCH_USER:
                     mCurrentUser = msg.arg1;
                     mSettingsObserver.updateContentObserver();
-                    //refreshDeviceLockedForUser(UserHandle.USER_ALL);
+                    refreshDeviceLockedForUser(UserHandle.USER_ALL);
                     break;
                 case MSG_STOP_USER:
                     //setDeviceLockedForUser(msg.arg1, true);
@@ -1256,7 +1332,7 @@ public class TrustManagerService extends SystemService {
                     		updateTrust(msg.arg1, 0 /* flags */, true);
                     	}
                     }
-                    //refreshDeviceLockedForUser(msg.arg1);
+                    refreshDeviceLockedForUser(msg.arg1);
                     break;
                 case MSG_SCHEDULE_TRUST_TIMEOUT:
                 	// Ignore trust timeouts.
@@ -1328,7 +1404,7 @@ public class TrustManagerService extends SystemService {
                         mTrustUsuallyManagedForUser.delete(userId);
                     }
                     refreshAgentList(userId);
-                    //refreshDeviceLockedForUser(userId);
+                    refreshDeviceLockedForUser(userId);
                 }
             }
         }
@@ -1487,7 +1563,7 @@ public class TrustManagerService extends SystemService {
 	                } catch (RemoteException e) {
 	                    Slog.e(TAG, "Exception while notifying TrustListener.", e);
 	                }
-	    			//refreshDeviceLockedForUser(mUserId);
+	    			refreshDeviceLockedForUser(mUserId);
     			}
     			mDispatchedGrants=current;
             }
